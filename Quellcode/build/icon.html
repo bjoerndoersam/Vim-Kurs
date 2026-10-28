@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+html, body { margin: 0; width: 1024px; height: 1024px; background: transparent; }
+.ic { position: absolute; left: 100px; top: 100px; width: 824px; height: 824px; border-radius: 184px;
+  background: linear-gradient(160deg, #1f2d26 0%, #0f1713 100%); box-shadow: inset 0 0 0 6px rgba(255,255,255,.06), 0 18px 40px rgba(0,0,0,.35); overflow: hidden; }
+.bar { position: absolute; left: 0; right: 0; bottom: 0; height: 150px; background: #1a2620; }
+.pill { position: absolute; left: 92px; bottom: 44px; height: 62px; width: 260px; border-radius: 14px; background: #46d697; }
+.pill::after { content: ''; position: absolute; left: 34px; right: 34px; top: 26px; height: 10px; border-radius: 5px; background: #15201b; }
+.line { position: absolute; left: 92px; height: 34px; border-radius: 17px; background: #33463c; }
+.cur { position: absolute; left: 470px; top: 200px; width: 150px; height: 300px; border-radius: 16px; background: #f2b84b; box-shadow: 0 0 60px rgba(242,184,75,.45); }
+</style></head><body>
+<div class="ic">
+  <div class="line" style="top:160px;width:300px"></div>
+  <div class="line" style="top:240px;width:220px"></div>
+  <div class="line" style="top:320px;width:330px"></div>
+  <div class="line" style="top:400px;width:180px"></div>
+  <div class="line" style="top:480px;width:260px"></div>
+  <div class="cur"></div>
+  <div class="bar"><div class="pill"></div></div>
+</div>
+</body></html>

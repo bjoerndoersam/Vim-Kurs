@@ -1,0 +1,16 @@
+#!/bin/bash
+# Startet Vimsical in einem eigenen Browserfenster ohne Adressleiste.
+# Der Fortschritt liegt im eigenen Browserprofil unter ~/Library/Application Support/Vimsical.
+RES="$(cd "$(dirname "$0")/../Resources" && pwd)"
+DATA="$HOME/Library/Application Support/Vimsical"
+OLD="$HOME/Library/Application Support/VimKurs"
+if [ -d "$OLD" ] && [ ! -d "$DATA" ]; then DATA="$OLD"; fi
+mkdir -p "$DATA"
+cp -f "$RES/vimsical.html" "$DATA/vimsical.html"
+URL="file://$(printf '%s' "$DATA/vimsical.html" | sed 's/ /%20/g')"
+for B in "Google Chrome" "Microsoft Edge" "Brave Browser" "Chromium" "Vivaldi"; do
+  if open -Ra "$B" 2>/dev/null; then
+    exec open -na "$B" --args --app="$URL" --user-data-dir="$DATA/Browser" --window-size=1320,880 --no-first-run --no-default-browser-check
+  fi
+done
+exec open "$URL"
