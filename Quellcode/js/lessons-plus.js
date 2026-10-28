@@ -718,5 +718,31 @@
     }
   ];
 
+  const MORE_CHALLENGES = [
+    { id: 'zeilentausch', title: T('Zeilentausch', 'Line swap'), level: 1, task: T('Bring die beiden Zeilen in die richtige Reihenfolge.', 'Put the two lines in the right order.'), text: T('¶zweite Zeile\nerste Zeile', '¶second line\nfirst line'), goal: T('erste Zeile\nzweite Zeile', 'first line\nsecond line'), sol: 'ddp' },
+    { id: 'doppelwort', title: T('Doppeltes Wort', 'Doubled word'), level: 1, task: T('Entferne das doppelte Wort.', 'Remove the doubled word.'), text: T('¶Das ist ist gut', '¶This is is good'), goal: T('Das ist gut', 'This is good'), sol: 'wdw' },
+    { id: 'klammer-leer', title: T('Leere Klammer', 'Empty brackets'), level: 1, task: T('Entferne alle Argumente des Aufrufs.', 'Remove all arguments of the call.'), text: "print('debug', ¶x, y)", goal: 'print()', sol: 'di(' },
+    { id: 'html-link', title: T('Link ändern', 'Change a link'), level: 1, task: T('Ändere das Linkziel auf <code>neu.html</code>.', 'Change the link target to <code>new.html</code>.'), text: '<a ¶href="old.html">Link</a>', goal: T('<a href="neu.html">Link</a>', '<a href="new.html">Link</a>'), sol: T('ci"neu.html<Esc>', 'ci"new.html<Esc>') },
+    { id: 'einruecken-rest', title: T('Funktionskörper', 'Function body'), level: 1, task: T('Rücke alle Zeilen unter <code>def</code> ein.', 'Indent all lines below <code>def</code>.'), text: 'def f():\n¶a = 1\nb = 2\nreturn a + b', goal: 'def f():\n    a = 1\n    b = 2\n    return a + b', sol: '>G' },
+    { id: 'rechnen', title: T('Kopfrechnen', 'Mental arithmetic'), level: 2, task: T('Lass Vim das Ergebnis einsetzen.', 'Let Vim fill in the result.'), text: '¶17 * 23 = ', goal: '17 * 23 = 391', sol: 'A<C-r>=17*23<CR><Esc>' },
+    { id: 'leerzeilen', title: T('Leerzeilen weg', 'No blank lines'), level: 2, task: T('Entferne alle leeren Zeilen.', 'Remove all empty lines.'), text: '¶a\n\nb\n\n\nc', goal: 'a\nb\nc', sol: ':g/^$/d<CR>' },
+    { id: 'zahlen-sortieren', title: T('Zahlen sortieren', 'Sort numbers'), level: 2, task: T('Sortiere die Zahlen nach ihrem Wert, nicht alphabetisch.', 'Sort the numbers by value, not alphabetically.'), text: '¶100\n9\n25\n3', goal: '3\n9\n25\n100', sol: ':sort n<CR>' },
+    { id: 'eindeutig', title: T('Doppelte raus', 'Drop duplicates'), level: 2, task: T('Sortiere und behalte jede Zeile nur einmal.', 'Sort and keep every line only once.'), text: T('¶kiwi\napfel\nkiwi\napfel', '¶kiwi\napple\nkiwi\napple'), goal: T('apfel\nkiwi', 'apple\nkiwi'), sol: ':sort u<CR>' },
+    { id: 'kommentarblock', title: T('Kommentarblock', 'Comment block'), level: 2, task: T('Kommentiere alle vier Zeilen mit <code># </code> aus.', 'Comment out all four lines with <code># </code>.'), text: '¶a()\nb()\nc()\nd()', goal: '# a()\n# b()\n# c()\n# d()', sol: '<C-v>3jI# <Esc>' },
+    { id: 'satz-raus', title: T('Satz streichen', 'Strike a sentence'), level: 2, task: T('Lösche den mittleren Satz.', 'Delete the middle sentence.'), text: T('Vim ist schnell. Emacs ist ¶auch ein Editor. Vim bleibt.', 'Vim is fast. Emacs is ¶also an editor. Vim stays.'), goal: T('Vim ist schnell. Vim bleibt.', 'Vim is fast. Vim stays.'), sol: 'das' },
+    { id: 'plus-zehn', title: T('Plus zehn', 'Plus ten'), level: 2, task: T('Erhöhe jede Zahl um 10.', 'Increase every number by 10.'), text: '¶a = 1\nb = 2\nc = 3', goal: 'a = 11\nb = 12\nc = 13', sol: 'VG10<C-a>' },
+    { id: 'titel', title: T('Großschreibung', 'Title case'), level: 2, task: T('Schreibe jeden Wortanfang groß.', 'Capitalise every word.'), text: '¶vim ist super', goal: 'Vim Ist Super', sol: ':s/\\<./\\u&/g<CR>' },
+    { id: 'woerter-tauschen', title: T('Wörter tauschen', 'Swap words'), level: 3, task: T('Vertausche die beiden Wörter.', 'Swap the two words.'), text: T('¶Welt Hallo', '¶world Hello'), goal: T('Hallo Welt', 'Hello world'), sol: ':s/\\v(\\w+) (\\w+)/\\2 \\1/<CR>' },
+    { id: 'spalte-weg', title: T('Spalte entfernen', 'Drop a column'), level: 3, task: T('Entferne die zweite Spalte der CSV-Daten.', 'Remove the second column of the CSV data.'), text: '¶name,age,city\nAda,36,London', goal: 'name,city\nAda,London', sol: ':%s/,[^,]*//<CR>' },
+    { id: 'tags-weg', title: T('Tags entfernen', 'Strip tags'), level: 3, task: T('Entferne alle HTML-Tags, der Text bleibt.', 'Remove all HTML tags, keep the text.'), text: '¶<p>Hello <b>world</b></p>', goal: 'Hello world', sol: ':s/<[^>]*>//g<CR>' },
+    { id: 'liste-nummern', title: T('Nummerierte Liste', 'Numbered list'), level: 3, task: T('Nummeriere die Zeilen als Liste von 1 bis 3.', 'Number the lines as a list from 1 to 3.'), text: T('¶eins\nzwei\ndrei', '¶one\ntwo\nthree'), goal: T('1. eins\n2. zwei\n3. drei', '1. one\n2. two\n3. three'), sol: ':%s/^/0. /<CR>ggVGg<C-a>' },
+    { id: 'json-schluessel', title: T('JSON-Schlüssel', 'JSON keys'), level: 3, task: T('Setze jeden Schlüssel in doppelte Anführungszeichen.', 'Put every key in double quotes.'), text: '¶name: 1\nage: 2\ncity: 3', goal: '"name": 1\n"age": 2\n"city": 3', sol: ':%s/\\w\\+/"&"/<CR>' },
+    { id: 'zwischen-dateien', title: T('Zwischen Dateien', 'Between files'), level: 3, task: T('Kopiere die Aufgabe aus <code>todo.txt</code> ans Ende von <code>notizen.txt</code> und speichere.', 'Copy the task from <code>todo.txt</code> to the end of <code>notes.txt</code> and save.'),
+      files: T({ 'notizen.txt': '¶Notizen', 'todo.txt': 'Milch kaufen' }, { 'notes.txt': '¶Notes', 'todo.txt': 'Buy milk' }), goalFiles: T({ 'notizen.txt': 'Notizen\nMilch kaufen' }, { 'notes.txt': 'Notes\nBuy milk' }), sol: ':b todo<CR>yy<C-^>p:w<CR>' },
+    { id: 'https-ueberall', title: T('HTTPS überall', 'HTTPS everywhere'), level: 3, task: T('Ersetze in allen Dateien <code>http:</code> durch <code>https:</code> und speichere sie.', 'Replace <code>http:</code> with <code>https:</code> in all files and save them.'),
+      files: { 'index.html': '¶<a href="http://vim.org">Vim</a>', 'links.txt': 'http://neovim.io\nhttp://example.com' }, goalFiles: { 'index.html': '<a href="https://vim.org">Vim</a>', 'links.txt': 'https://neovim.io\nhttps://example.com' }, sol: ':bufdo %s/http:/https:/g | update<CR>' }
+  ];
+
   root.VK.COURSE.push(...CHAPTERS);
+  root.VK.CHALLENGES.push(...MORE_CHALLENGES);
 })(typeof window !== 'undefined' ? window : this);

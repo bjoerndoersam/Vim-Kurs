@@ -46,7 +46,7 @@
       'ed.click': 'Klicke hier und tippe los', 'ed.rec': r => 'Aufnahme @' + r, 'ed.more': 'Weiter mit einer beliebigen Taste', 'ed.blocked': k => k + ' ist in dieser Übung gesperrt',
       'ed.label': 'Vim-Editor', 'ed.practice': 'Übungseditor',
       'pr.ex': (i, n) => `Übung ${i} von ${n}`, 'pr.keys': 'Tasten', 'pr.par': 'Ziel', 'pr.best': 'Bestwert', 'pr.goal': 'Ziel', 'pr.reached': 'erreicht', 'pr.pressEsc': 'Esc drücken',
-      'pr.lines': (a, b) => `${a} von ${b} Zeilen`, 'pr.extra': n => `${n} Zeile${n > 1 ? 'n' : ''} zu viel`, 'pr.log': 'Deine Tastendrücke erscheinen hier.',
+      'pr.lines': (a, b) => `${a} von ${b} Zeilen`, 'pr.missing': 'fehlt noch oder ist anders', 'pr.remove': 'muss noch weg', 'pr.extra': n => `${n} Zeile${n > 1 ? 'n' : ''} zu viel`, 'pr.log': 'Deine Tastendrücke erscheinen hier.',
       'pr.reset': 'Neu starten', 'pr.hints': 'Hinweise', 'pr.hide': 'Hinweise ausblenden', 'pr.skip': 'Überspringen', 'pr.next': 'Weiter', 'pr.finish': 'Abschließen',
       'pr.perfect': 'Perfekt gelöst', 'pr.solved': 'Gelöst', 'pr.done': 'Geschafft', 'pr.with': (k) => `mit ${k} ${k === 1 ? 'Taste' : 'Tasten'}`, 'pr.goalN': p => `(Ziel: ${p})`,
       'pr.bestWas': b => `Bestwert ${b}`, 'pr.newBest': 'Neuer Bestwert', 'pr.enterNext': 'nächste Übung', 'pr.enterFinish': 'abschließen', 'pr.again': 'nochmal',
@@ -102,7 +102,7 @@
       'ed.click': 'Click here and start typing', 'ed.rec': r => 'recording @' + r, 'ed.more': 'Press any key to continue', 'ed.blocked': k => k + ' is blocked in this exercise',
       'ed.label': 'Vim editor', 'ed.practice': 'Practice editor',
       'pr.ex': (i, n) => `Exercise ${i} of ${n}`, 'pr.keys': 'keys', 'pr.par': 'Par', 'pr.best': 'Best', 'pr.goal': 'Goal', 'pr.reached': 'reached', 'pr.pressEsc': 'press Esc',
-      'pr.lines': (a, b) => `${a} of ${b} lines`, 'pr.extra': n => `${n} line${n > 1 ? 's' : ''} too many`, 'pr.log': 'Your keystrokes appear here.',
+      'pr.lines': (a, b) => `${a} of ${b} lines`, 'pr.missing': 'still missing or different', 'pr.remove': 'still has to go', 'pr.extra': n => `${n} line${n > 1 ? 's' : ''} too many`, 'pr.log': 'Your keystrokes appear here.',
       'pr.reset': 'Restart', 'pr.hints': 'Hints', 'pr.hide': 'Hide hints', 'pr.skip': 'Skip', 'pr.next': 'Next', 'pr.finish': 'Finish',
       'pr.perfect': 'Perfect', 'pr.solved': 'Solved', 'pr.done': 'Done', 'pr.with': k => `in ${k} ${k === 1 ? 'key' : 'keys'}`, 'pr.goalN': p => `(par: ${p})`,
       'pr.bestWas': b => `best ${b}`, 'pr.newBest': 'new best', 'pr.enterNext': 'next exercise', 'pr.enterFinish': 'finish', 'pr.again': 'again',
@@ -860,6 +860,56 @@
   const specToHtml = s => fmtKey(s.replace(/\x01/g, '<C-a>').replace(/\x18/g, '<C-x>').replace(/\x12/g, '<C-r>').replace(/\x16/g, '<C-v>').replace(/\x04/g, '<C-d>').replace(/\x15/g, '<C-u>')
     .replace(/\x06/g, '<C-f>').replace(/\x02/g, '<C-b>').replace(/\x0f/g, '<C-o>').replace(/\t/g, '<C-i>').replace(/\x05/g, '<C-e>').replace(/\x19/g, '<C-y>').replace(/\x17/g, '<C-w>').replace(/\x1e/g, '<C-^>'));
 
+  /* Markiert in einer Zielzeile, was im aktuellen Text noch fehlt (gd-add) und wo noch etwas entfernt werden muss (gd-del). */
+  function goalDiffHtml(goal, cur) {
+    if (cur == null) return goal ? `<span class="gd-add">${esc(goal)}</span>` : ' ';
+    const a = Array.from(goal), b = Array.from(cur);
+    if (a.length * b.length > 40000) return `<span class="gd-add">${esc(goal)}</span>`;
+    const n = a.length, m = b.length;
+    const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    let i = 0, j = 0, html = '', add = '', del = '';
+    const flush = () => {
+      if (del) { html += `<del class="gd-del">${esc(del)}</del>`; del = ''; }
+      if (add) { html += `<span class="gd-add">${esc(add)}</span>`; add = ''; }
+    };
+    while (i < n || j < m) {
+      if (i < n && j < m && a[i] === b[j]) { flush(); html += esc(a[i]); i++; j++; }
+      else if (j < m && (i >= n || dp[i][j + 1] >= dp[i + 1][j])) { del += b[j]; j++; }
+      else { add += a[i]; i++; }
+    }
+    flush();
+    return html || ' ';
+  }
+
+  function lineSimilarity(a, b) {
+    if (a === b) return 1;
+    if (!a.length || !b.length) return a.length === b.length ? 1 : 0;
+    const x = Array.from(a), y = Array.from(b);
+    if (x.length * y.length > 40000) return 0;
+    let prev = new Uint16Array(y.length + 1), row = new Uint16Array(y.length + 1);
+    for (let i = 1; i <= x.length; i++) {
+      for (let j = 1; j <= y.length; j++) row[j] = x[i - 1] === y[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], row[j - 1]);
+      [prev, row] = [row, prev];
+    }
+    return 2 * prev[y.length] / (x.length + y.length);
+  }
+  /* Ordnet Ziel- und aktuelle Zeilen einander zu: gleiche oder ähnliche Zeilen werden gepaart, der Rest gilt als fehlend (add) oder überzählig (del). */
+  function alignLines(goal, cur) {
+    const n = goal.length, m = cur.length;
+    const sim = goal.map(g => cur.map(c => { const s = lineSimilarity(g, c); return s >= 0.5 ? s : 0; }));
+    const dp = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1], sim[i][j] ? dp[i + 1][j + 1] + sim[i][j] : 0);
+    const out = [];
+    let i = 0, j = 0;
+    while (i < n || j < m) {
+      if (i < n && j < m && sim[i][j] && dp[i][j] === dp[i + 1][j + 1] + sim[i][j]) { out.push({ type: 'pair', g: goal[i], c: cur[j] }); i++; j++; }
+      else if (j < m && (i >= n || dp[i][j] === dp[i][j + 1])) { out.push({ type: 'del', c: cur[j] }); j++; }
+      else { out.push({ type: 'add', g: goal[i] }); i++; }
+    }
+    return out;
+  }
+
   /* ---------- Übungspanel ---------- */
   class Practice {
     constructor(host, opts) {
@@ -877,7 +927,7 @@
         <div class="pr-taskrow"><span class="tier"></span><p class="pr-task"></p></div>
         <div class="pr-stage">
           <div class="pr-ed"></div>
-          <aside class="pr-goal" hidden><div class="pr-goal-h"><span class="pr-goal-name">${esc(t('pr.goal'))}</span><span class="pr-goal-state"></span></div><pre class="pr-goal-text"></pre></aside>
+          <aside class="pr-goal" hidden><div class="pr-goal-h"><span class="pr-goal-name">${esc(t('pr.goal'))}</span><span class="pr-goal-state"></span></div><pre class="pr-goal-text"></pre><div class="gd-legend"><span><span class="gd-add">abc</span> ${esc(t('pr.missing'))}</span><span><del class="gd-del">abc</del> ${esc(t('pr.remove'))}</span></div></aside>
         </div>
         <div class="pr-done" hidden></div>
         <div class="pr-log" aria-label="Log"></div>
@@ -1055,11 +1105,11 @@
           const cur = curText == null ? [] : curText.split('\n');
           let ok = 0;
           if (entries.length > 1) html += (idx ? '\n' : '') + `<span class="gl-file">${esc(name)}</span>\n`;
-          html += goal.map((g, j) => {
-            const same = cur[j] === g;
-            if (same) ok++;
-            return `<span class="gl ${same ? 'ok' : 'diff'}">${esc(g) || ' '}</span>`;
-          }).join('\n') + (cur.length > goal.length ? `\n<span class="gl extra">${esc(t('pr.extra', cur.length - goal.length))}</span>` : '');
+          html += alignLines(goal, cur).map(p => {
+            if (p.type === 'del') return `<span class="gl"><del class="gd-del">${esc(p.c) || ' '}</del></span>`;
+            if (p.type === 'pair' && p.g === p.c) { ok++; return `<span class="gl ok">${esc(p.g) || ' '}</span>`; }
+            return `<span class="gl diff">${goalDiffHtml(p.g, p.type === 'pair' ? p.c : null)}</span>`;
+          }).join('\n');
           okAll += ok; totalAll += goal.length;
           if (!(ok === goal.length && cur.length === goal.length)) allSame = false;
         });
@@ -1155,6 +1205,18 @@
   window.addEventListener('hashchange', route);
 
   /* ---------- Start ---------- */
+  function shortKeys(l) {
+    const out = [];
+    let width = 0;
+    for (const k of l.keys) {
+      const spec = k[0].split(' / ')[0].replace(/<C-(.)>/g, '^$1');
+      if (spec.length > 6 || /\{/.test(spec)) continue;
+      if (width + spec.length > 11 || out.length >= 3) break;
+      out.push(k[0].split(' / ')[0]);
+      width += spec.length + 1;
+    }
+    return out;
+  }
   function renderStart() {
     const s = stats();
     const nl = nextLesson();
@@ -1186,7 +1248,7 @@
             <div class="ch-top"><span class="ch-num">${esc(t('st.chapter', ci + 1))}</span><span class="ch-count">${done}/${ch.lessons.length}</span></div>
             <h3>${esc(L(ch.title))}</h3>
             <div class="bar"><span style="width:${Math.round(done / ch.lessons.length * 100)}%"></span></div>
-            <ol>${ch.lessons.map((l, j) => `<li><a href="#l-${l.id}" class="${st[j].complete ? 'done' : st[j].done ? 'started' : ''}"><span class="sb-dot" aria-hidden="true"></span>${esc(L(l.title))}</a> <span class="ch-keys">${l.keys.slice(0, 3).map(k => `<kbd>${fmtKey(k[0])}</kbd>`).join('')}</span></li>`).join('')}</ol>
+            <ol>${ch.lessons.map((l, j) => `<li><a href="#l-${l.id}" class="${st[j].complete ? 'done' : st[j].done ? 'started' : ''}"><span class="sb-dot" aria-hidden="true"></span>${esc(L(l.title))}</a> <span class="ch-keys">${shortKeys(l).map(k => `<kbd>${fmtKey(k)}</kbd>`).join('')}</span></li>`).join('')}</ol>
           </article>`;
         }).join('')}
           <article class="ch-card extra">
@@ -1641,7 +1703,7 @@
     const render = () => {
       const seg = (name, val, opts) => `<div class="seg" role="radiogroup">${opts.map(([v, lab]) => `<button type="button" role="radio" aria-checked="${v === val}" data-set="${name}" data-val="${v}">${esc(lab)}</button>`).join('')}</div>`;
       return `<div class="ob">
-        <div class="ob-logo"><span class="brand-cur"></span></div>
+        <div class="ob-logo">${(document.querySelector('.brand-logo') || { outerHTML: '' }).outerHTML}</div>
         <h2>${esc(t('ob.title'))}</h2><p class="muted">${esc(t('ob.lede'))}</p>
         <label class="field"><span>${esc(t('set.lang'))}</span>${seg('lang', S.lang, [['de', 'Deutsch'], ['en', 'English']])}</label>
         <label class="field"><span>${esc(t('set.os'))}</span>${seg('os', S.os, [['mac', t('os.mac')], ['win', t('os.win')], ['linux', t('os.linux')]])}</label>
